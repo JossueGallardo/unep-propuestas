@@ -9,7 +9,12 @@ export const siteConfig = {
   email: "",
   phone: "",
   address: "",
-  socialLinks: [] as Array<{ label: string; href: string }>,
+  socialLinks: [
+    {
+      label: "Instagram",
+      href: "https://www.instagram.com/lista_unep/",
+    },
+  ],
   locale: "es_EC",
   timezone: "America/Guayaquil",
 } as const;

@@ -12,6 +12,53 @@ test("portada accesible, navegable y sin desbordamiento", async ({ page }) => {
   await expect(
     page.getByRole("button", { name: "Enviar propuesta" }),
   ).toBeEnabled();
+  await expect(
+    page.getByText(
+      "Estas categorías solo ayudan a organizar. Si ninguna encaja, puedes escribir la tuya.",
+    ),
+  ).toHaveCount(0);
+  await expect(
+    page.getByRole("link", {
+      name: "Instagram de UNEP (abre en una pestaña nueva)",
+    }),
+  ).toHaveAttribute("href", "https://www.instagram.com/lista_unep/");
+
+  const consentLayout = await page
+    .locator('label[for="privacyAccepted"]')
+    .evaluate((label) => {
+      const checkbox = document.querySelector<HTMLElement>(
+        '[data-slot="checkbox"]',
+      );
+      const labelRect = label.getBoundingClientRect();
+      const checkboxRect = checkbox?.getBoundingClientRect();
+      return {
+        display: getComputedStyle(label).display,
+        labelWidth: labelRect.width,
+        correctlyOrdered: checkboxRect
+          ? checkboxRect.right <= labelRect.left
+          : false,
+      };
+    });
+  expect(consentLayout.display).toBe("block");
+  expect(consentLayout.labelWidth).toBeGreaterThan(200);
+  expect(consentLayout.correctlyOrdered).toBe(true);
+
+  const compactControls = await page.evaluate(() =>
+    [
+      ...document.querySelectorAll<HTMLElement>(
+        '#envia-tu-propuesta [data-slot="input"], #envia-tu-propuesta [data-slot="select-trigger"], #envia-tu-propuesta button[type="submit"]',
+      ),
+    ]
+      .filter((element) => {
+        const rect = element.getBoundingClientRect();
+        return (
+          rect.width > 0 && rect.height > 0 && !element.matches(":disabled")
+        );
+      })
+      .filter((element) => element.getBoundingClientRect().height < 44)
+      .map((element) => element.getAttribute("data-slot") ?? element.tagName),
+  );
+  expect(compactControls).toEqual([]);
   await page.waitForFunction(() =>
     document
       .getAnimations()
@@ -28,6 +75,26 @@ test("portada accesible, navegable y sin desbordamiento", async ({ page }) => {
       document.documentElement.clientWidth,
   );
   expect(hasOverflow).toBe(false);
+
+  await page
+    .locator(
+      'a[href="#como-funciona"]:visible, a[href="/#como-funciona"]:visible',
+    )
+    .last()
+    .click();
+  await expect(page).toHaveURL(/#como-funciona$/);
+  const anchorPosition = await page
+    .locator("#como-funciona")
+    .evaluate((section) => {
+      const header = document.querySelector("header");
+      return {
+        headerBottom: header?.getBoundingClientRect().bottom ?? 0,
+        sectionTop: section.getBoundingClientRect().top,
+      };
+    });
+  expect(anchorPosition.sectionTop).toBeGreaterThanOrEqual(
+    anchorPosition.headerBottom - 1,
+  );
 });
 
 test("navegación por teclado conserva foco visible", async ({ page }) => {

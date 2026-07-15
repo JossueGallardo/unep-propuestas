@@ -104,7 +104,7 @@ export default function Home() {
 
         <section
           id="quienes-somos"
-          className="container-site grid gap-10 py-20 md:grid-cols-[0.75fr_1.25fr] md:py-28"
+          className="container-site grid scroll-mt-24 gap-10 py-20 md:grid-cols-[0.75fr_1.25fr] md:py-28"
         >
           <div>
             <p className="text-kicker">Quiénes somos</p>
@@ -124,7 +124,10 @@ export default function Home() {
           </div>
         </section>
 
-        <section id="como-funciona" className="bg-charcoal text-white">
+        <section
+          id="como-funciona"
+          className="bg-charcoal scroll-mt-24 text-white"
+        >
           <div className="container-site py-20 md:py-24">
             <p className="text-xs font-bold tracking-[0.19em] text-white/60 uppercase">
               Cómo funciona
@@ -161,17 +164,16 @@ export default function Home() {
           </div>
         </section>
 
-        <section id="ambitos" className="container-site py-20 md:py-28">
+        <section
+          id="ambitos"
+          className="container-site scroll-mt-24 py-20 md:py-28"
+        >
           <div className="grid gap-8 md:grid-cols-[0.8fr_1.2fr]">
             <div>
               <p className="text-kicker">Ámbitos de propuesta</p>
               <h2 className="mt-3 text-4xl sm:text-5xl">
                 Todas las ideas tienen un lugar.
               </h2>
-              <p className="text-muted-foreground mt-5 max-w-md leading-7">
-                Estas categorías solo ayudan a organizar. Si ninguna encaja,
-                puedes escribir la tuya.
-              </p>
             </div>
             <ul className="border-t">
               {proposalCategories.map((category, index) => (
@@ -191,7 +193,10 @@ export default function Home() {
           </div>
         </section>
 
-        <section id="envia-tu-propuesta" className="bg-secondary border-y">
+        <section
+          id="envia-tu-propuesta"
+          className="bg-secondary scroll-mt-24 border-y"
+        >
           <div className="container-site grid gap-10 py-20 lg:grid-cols-[0.72fr_1.28fr] lg:py-28">
             <div>
               <p className="text-kicker">Tu voz cuenta</p>
@@ -217,7 +222,7 @@ export default function Home() {
                 convivencia escolar o atención inmediata.
               </p>
             </div>
-            <div className="border bg-white p-5 sm:p-8 lg:p-10">
+            <div className="border bg-white p-4 sm:p-8 lg:p-10">
               <ProposalForm />
             </div>
           </div>

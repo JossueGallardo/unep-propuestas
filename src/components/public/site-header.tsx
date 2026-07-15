@@ -24,7 +24,7 @@ const navigation = [
 
 export function SiteHeader() {
   return (
-    <header className="bg-ivory/95 border-b backdrop-blur-sm">
+    <header className="bg-ivory/95 sticky top-0 z-50 border-b backdrop-blur-sm">
       <div className="container-site flex h-20 items-center justify-between gap-6">
         <Link
           href="/"
@@ -72,7 +72,7 @@ export function SiteHeader() {
             <Button
               variant="outline"
               size="icon"
-              className="lg:hidden"
+              className="size-11 lg:hidden"
               aria-label="Abrir menú"
             >
               <Menu aria-hidden="true" />

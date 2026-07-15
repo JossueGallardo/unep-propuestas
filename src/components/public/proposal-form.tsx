@@ -197,7 +197,7 @@ export function ProposalForm() {
     <form
       noValidate
       onSubmit={form.handleSubmit(onSubmit)}
-      className="space-y-8"
+      className="space-y-7 sm:space-y-8"
     >
       <div className="flex items-start justify-between gap-5 border-b pb-6">
         <div>
@@ -387,17 +387,18 @@ export function ProposalForm() {
         control={form.control}
         name="privacyAccepted"
         render={({ field }) => (
-          <div>
-            <div className="flex items-start gap-3">
+          <div className="bg-ivory/60 rounded-lg border p-4">
+            <div className="grid grid-cols-[1.25rem_minmax(0,1fr)] items-start gap-3">
               <Checkbox
                 id="privacyAccepted"
+                className="mt-1 size-5"
                 checked={field.value}
                 onCheckedChange={(checked) => field.onChange(checked === true)}
                 aria-invalid={Boolean(form.formState.errors.privacyAccepted)}
               />
               <Label
                 htmlFor="privacyAccepted"
-                className="text-sm leading-6 font-normal"
+                className="block min-w-0 cursor-pointer text-base leading-7 font-normal sm:text-sm sm:leading-6"
               >
                 He leído el{" "}
                 <Link
@@ -435,13 +436,14 @@ export function ProposalForm() {
       ) : null}
 
       <div className="flex flex-col-reverse gap-4 border-t pt-6 sm:flex-row sm:items-center sm:justify-between">
-        <p className="text-muted-foreground flex items-center gap-2 text-sm">
+        <p className="text-muted-foreground flex min-w-0 items-center gap-2 text-sm">
           <ShieldCheck className="size-4" aria-hidden="true" /> Tus datos no
           serán públicos.
         </p>
         <Button
           type="submit"
           size="lg"
+          className="w-full sm:w-auto sm:min-w-48"
           disabled={form.formState.isSubmitting || tokenLoading}
         >
           {form.formState.isSubmitting ? (

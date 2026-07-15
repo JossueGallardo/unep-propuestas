@@ -1,3 +1,4 @@
+import { Camera, ExternalLink } from "lucide-react";
 import Link from "next/link";
 
 import { siteConfig } from "@/config/site";
@@ -19,9 +20,9 @@ export function SiteFooter() {
             </a>
           ) : null}
         </div>
-        <div className="space-y-3 text-sm md:text-right">
+        <div className="flex flex-col items-start gap-2 text-sm md:items-end md:text-right">
           <Link
-            className="focus-ring block underline-offset-4 hover:underline"
+            className="focus-ring inline-flex min-h-11 items-center underline-offset-4 hover:underline"
             href="/privacidad"
           >
             Aviso de privacidad
@@ -30,10 +31,17 @@ export function SiteFooter() {
             <a
               key={link.href}
               href={link.href}
-              className="block"
+              aria-label={`${link.label} de UNEP (abre en una pestaña nueva)`}
+              className="focus-ring inline-flex min-h-11 items-center gap-2 rounded-md border border-white/20 px-3 py-2 transition-colors hover:bg-white/10"
               rel="noreferrer"
+              target="_blank"
             >
-              {link.label}
+              <Camera className="size-4" aria-hidden="true" />
+              <span>{link.label}</span>
+              <ExternalLink
+                className="size-3.5 text-white/55"
+                aria-hidden="true"
+              />
             </a>
           ))}
           <p className="text-white/60">© {year} UNEP</p>
