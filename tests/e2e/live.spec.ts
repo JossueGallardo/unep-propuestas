@@ -49,6 +49,9 @@ test.describe("flujos conectados", () => {
     expect((await downloadPromise).suggestedFilename()).toBe(
       "unep-propuestas.csv",
     );
+    await page.getByRole("link", { name: "Limpiar" }).click();
+    await expect(page).toHaveURL(/\/admin$/);
+    await expect(page.getByLabel("Estado")).toHaveValue("");
     await page.getByRole("button", { name: /Cerrar sesión/ }).click();
     await expect(page).toHaveURL(/\/admin\/login$/);
   });

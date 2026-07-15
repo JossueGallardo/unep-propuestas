@@ -8,6 +8,7 @@ import { proposalCategories, proposalStatuses } from "@/lib/constants";
 import type { AdminFilters } from "@/lib/admin/filters";
 
 export function AdminFiltersForm({ filters }: { filters: AdminFilters }) {
+  const formKey = JSON.stringify(filters);
   const exportParams = new URLSearchParams();
   for (const [key, value] of Object.entries(filters)) {
     if (key !== "page" && value && value !== "newest")
@@ -15,7 +16,7 @@ export function AdminFiltersForm({ filters }: { filters: AdminFilters }) {
   }
 
   return (
-    <form method="get" className="border bg-white p-4 sm:p-5">
+    <form key={formKey} method="get" className="border bg-white p-4 sm:p-5">
       <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
         <div className="space-y-2 md:col-span-2">
           <Label htmlFor="search">Buscar</Label>

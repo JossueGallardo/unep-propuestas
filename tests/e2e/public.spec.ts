@@ -9,6 +9,9 @@ test("portada accesible, navegable y sin desbordamiento", async ({ page }) => {
   await expect(
     page.getByRole("heading", { name: "Envía tu propuesta." }),
   ).toBeVisible();
+  await expect(
+    page.getByRole("button", { name: "Enviar propuesta" }),
+  ).toBeEnabled();
   await page.waitForFunction(() =>
     document
       .getAnimations()
