@@ -9,6 +9,14 @@ test("portada accesible, navegable y sin desbordamiento", async ({ page }) => {
   await expect(
     page.getByRole("heading", { name: "Envía tu propuesta." }),
   ).toBeVisible();
+  await page.waitForFunction(() =>
+    document
+      .getAnimations()
+      .filter(
+        (animation) => animation.effect?.getTiming().iterations !== Infinity,
+      )
+      .every((animation) => animation.playState === "finished"),
+  );
   const violations = await new AxeBuilder({ page }).analyze();
   expect(violations.violations).toEqual([]);
   const hasOverflow = await page.evaluate(
