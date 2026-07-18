@@ -155,10 +155,13 @@ export function SiteFooter() {
       </div>
 
       <div
-        className="container-site overflow-hidden border-t border-white/10 pt-5"
+        className="container-site border-t border-white/10 pt-5 pb-6 sm:pb-8"
         aria-hidden="true"
       >
-        <p className="font-heading translate-y-[0.1em] text-[clamp(6rem,19vw,17rem)] leading-[0.72] tracking-[-0.08em] text-white/35 select-none">
+        <p
+          className="font-heading text-[clamp(6rem,19vw,17rem)] leading-[0.82] tracking-[-0.08em] text-white/35 select-none"
+          data-footer-wordmark
+        >
           UNEP
         </p>
       </div>

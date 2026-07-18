@@ -48,8 +48,18 @@ test("portada accesible, navegable y sin desbordamiento", async ({ page }) => {
   ).toBeVisible();
   await expect(
     footer.getByRole("link", { name: "Acceso administrativo" }),
-  ).toHaveAttribute("href", "/admin/login");
+  ).toHaveCount(0);
   await expect(footer.getByText("@lista_unep")).toBeVisible();
+  const wordmarkBottomSpace = await footer
+    .locator("[data-footer-wordmark]")
+    .evaluate((wordmark) => {
+      const footerElement = wordmark.closest("footer");
+      return footerElement
+        ? footerElement.getBoundingClientRect().bottom -
+            wordmark.getBoundingClientRect().bottom
+        : 0;
+    });
+  expect(wordmarkBottomSpace).toBeGreaterThanOrEqual(24);
 
   const consentLayout = await page
     .locator('label[for="privacyAccepted"]')

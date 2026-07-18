@@ -11,5 +11,4 @@ export const proposalFormLink = {
 
 export const utilityNavigation = [
   { href: "/privacidad", label: "Aviso de privacidad" },
-  { href: "/admin/login", label: "Acceso administrativo" },
 ] as const;
