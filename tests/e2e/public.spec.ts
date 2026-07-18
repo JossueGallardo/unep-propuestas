@@ -111,18 +111,17 @@ test("portada accesible, navegable y sin desbordamiento", async ({ page }) => {
     .last()
     .click();
   await expect(page).toHaveURL(/#como-funciona$/);
-  const anchorPosition = await page
-    .locator("#como-funciona")
-    .evaluate((section) => {
-      const header = document.querySelector("header");
-      return {
-        headerBottom: header?.getBoundingClientRect().bottom ?? 0,
-        sectionTop: section.getBoundingClientRect().top,
-      };
-    });
-  expect(anchorPosition.sectionTop).toBeGreaterThanOrEqual(
-    anchorPosition.headerBottom - 1,
-  );
+  await expect
+    .poll(() =>
+      page.locator("#como-funciona").evaluate((section) => {
+        const header = document.querySelector("header");
+        return (
+          section.getBoundingClientRect().top >=
+          (header?.getBoundingClientRect().bottom ?? 0) - 1
+        );
+      }),
+    )
+    .toBe(true);
 });
 
 test("navegación por teclado conserva foco visible", async ({
