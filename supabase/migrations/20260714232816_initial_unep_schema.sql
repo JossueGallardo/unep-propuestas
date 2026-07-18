@@ -397,7 +397,13 @@ alter default privileges for role postgres in schema private revoke execute on f
 alter default privileges for role postgres in schema public revoke all on tables from anon, authenticated;
 alter default privileges for role postgres in schema private revoke all on tables from anon, authenticated;
 
-revoke execute on function public.rls_auto_enable() from public, anon, authenticated;
+do $$
+begin
+  if pg_catalog.to_regprocedure('public.rls_auto_enable()') is not null then
+    revoke execute on function public.rls_auto_enable() from public, anon, authenticated;
+  end if;
+end;
+$$;
 
 comment on table public.proposals is 'Propuestas privadas recibidas por UNEP; su contenido original es inmutable.';
 comment on function public.submit_proposal is 'Único punto de inserción público; exige el verificador secreto del servidor.';

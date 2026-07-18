@@ -21,8 +21,10 @@ begin
   if has_table_privilege('authenticated', 'public.proposals', 'delete') then
     raise exception 'authenticated no debe poder eliminar proposals';
   end if;
-  if has_function_privilege('anon', 'public.rls_auto_enable()', 'execute') then
-    raise exception 'anon no debe ejecutar rls_auto_enable';
+  if pg_catalog.to_regprocedure('public.rls_auto_enable()') is not null then
+    if has_function_privilege('anon', 'public.rls_auto_enable()', 'execute') then
+      raise exception 'anon no debe ejecutar rls_auto_enable';
+    end if;
   end if;
 end;
 $$;
