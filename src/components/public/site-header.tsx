@@ -1,26 +1,10 @@
-"use client";
-
-import { Menu } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
 
-import { siteConfig } from "@/config/site";
+import { MobileNavigation } from "@/components/public/mobile-navigation";
 import { Button } from "@/components/ui/button";
-import {
-  Sheet,
-  SheetClose,
-  SheetContent,
-  SheetDescription,
-  SheetHeader,
-  SheetTitle,
-  SheetTrigger,
-} from "@/components/ui/sheet";
-
-const navigation = [
-  { href: "/#quienes-somos", label: "Quiénes somos" },
-  { href: "/#como-funciona", label: "Cómo funciona" },
-  { href: "/#ambitos", label: "Ámbitos" },
-];
+import { proposalFormLink, publicNavigation } from "@/config/navigation";
+import { siteConfig } from "@/config/site";
 
 export function SiteHeader() {
   return (
@@ -53,7 +37,7 @@ export function SiteHeader() {
           aria-label="Navegación principal"
           className="hidden items-center gap-7 lg:flex"
         >
-          {navigation.map((item) => (
+          {publicNavigation.map((item) => (
             <Link
               key={item.href}
               href={item.href}
@@ -63,53 +47,11 @@ export function SiteHeader() {
             </Link>
           ))}
           <Button asChild>
-            <Link href="/#envia-tu-propuesta">Envía tu propuesta</Link>
+            <Link href={proposalFormLink.href}>{proposalFormLink.label}</Link>
           </Button>
         </nav>
 
-        <Sheet>
-          <SheetTrigger asChild>
-            <Button
-              variant="outline"
-              size="icon"
-              className="size-11 lg:hidden"
-              aria-label="Abrir menú"
-            >
-              <Menu aria-hidden="true" />
-            </Button>
-          </SheetTrigger>
-          <SheetContent
-            side="right"
-            className="bg-ivory w-[min(88vw,24rem)] px-6"
-          >
-            <SheetHeader className="border-b px-0 pb-5 text-left">
-              <SheetTitle className="text-2xl">
-                {siteConfig.shortName}
-              </SheetTitle>
-              <SheetDescription>{siteConfig.slogan}</SheetDescription>
-            </SheetHeader>
-            <nav
-              aria-label="Navegación móvil"
-              className="flex flex-col gap-2 py-7"
-            >
-              {navigation.map((item) => (
-                <SheetClose asChild key={item.href}>
-                  <Link
-                    href={item.href}
-                    className="focus-ring border-b py-4 text-lg font-semibold"
-                  >
-                    {item.label}
-                  </Link>
-                </SheetClose>
-              ))}
-              <SheetClose asChild>
-                <Button asChild className="mt-5">
-                  <Link href="/#envia-tu-propuesta">Envía tu propuesta</Link>
-                </Button>
-              </SheetClose>
-            </nav>
-          </SheetContent>
-        </Sheet>
+        <MobileNavigation />
       </div>
     </header>
   );

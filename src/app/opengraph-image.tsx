@@ -1,11 +1,20 @@
+import { readFile } from "node:fs/promises";
+import { join } from "node:path";
+
 import { ImageResponse } from "next/og";
 
-export const alt = "UNEP — Unidos por el cambio Novembrino";
+import { siteConfig } from "@/config/site";
+
+export const alt = `${siteConfig.shortName} — ${siteConfig.slogan}`;
 export const size = { width: 1200, height: 630 };
 export const contentType = "image/png";
 
-export default function OpenGraphImage() {
-  const logoUrl = "https://unep-propuestas.vercel.app/brand/logo.jpeg";
+export default async function OpenGraphImage() {
+  const logoData = await readFile(
+    join(process.cwd(), "public", "brand", "logo.jpeg"),
+    "base64",
+  );
+  const logoUrl = `data:image/jpeg;base64,${logoData}`;
 
   return new ImageResponse(
     <div
@@ -30,7 +39,7 @@ export default function OpenGraphImage() {
             opacity: 0.78,
           }}
         >
-          Unión Novembrina Educación y Progreso
+          {siteConfig.name}
         </div>
         <div
           style={{
@@ -40,17 +49,17 @@ export default function OpenGraphImage() {
             marginTop: 35,
           }}
         >
-          UNEP
+          {siteConfig.shortName}
         </div>
         <div style={{ fontSize: 48, lineHeight: 1.1, marginTop: 38 }}>
-          Unidos por el cambio Novembrino
+          {siteConfig.slogan}
         </div>
       </div>
       {/* ImageResponse renders standalone markup and cannot use next/image. */}
       {/* eslint-disable-next-line @next/next/no-img-element */}
       <img
         src={logoUrl}
-        alt="Logo oficial de UNEP"
+        alt={`Logo oficial de ${siteConfig.shortName}`}
         width="330"
         height="330"
         style={{

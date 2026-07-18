@@ -5,11 +5,26 @@ import { SiteFooter } from "@/components/public/site-footer";
 import { SiteHeader } from "@/components/public/site-header";
 import { siteConfig } from "@/config/site";
 
+const privacyDescription =
+  "Cómo se utiliza y protege la información enviada a través del formulario de UNEP.";
+
 export const metadata: Metadata = {
   title: "Aviso de privacidad",
-  description:
-    "Cómo se utiliza y protege la información enviada a través del formulario de UNEP.",
+  description: privacyDescription,
   alternates: { canonical: "/privacidad" },
+  openGraph: {
+    type: "website",
+    locale: siteConfig.locale,
+    siteName: siteConfig.shortName,
+    title: `Aviso de privacidad | ${siteConfig.shortName}`,
+    description: privacyDescription,
+    url: "/privacidad",
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: `Aviso de privacidad | ${siteConfig.shortName}`,
+    description: privacyDescription,
+  },
 };
 
 export default function PrivacyPage() {
@@ -82,14 +97,21 @@ export default function PrivacyPage() {
                 canales de emergencia o atención inmediata.
               </p>
             </section>
-            <section>
-              <h2 className="text-2xl">Contacto</h2>
-              <p className="mt-3">
-                El contacto institucional para consultas de privacidad se
-                publicará cuando exista un dato oficial confirmado. No mostramos
-                información provisional o inventada.
-              </p>
-            </section>
+            {siteConfig.email ? (
+              <section>
+                <h2 className="text-2xl">Contacto</h2>
+                <p className="mt-3">
+                  Para consultas relacionadas con este aviso, escribe a{" "}
+                  <a
+                    href={`mailto:${siteConfig.email}`}
+                    className="text-brand-dark focus-ring font-semibold underline underline-offset-4"
+                  >
+                    {siteConfig.email}
+                  </a>
+                  .
+                </p>
+              </section>
+            ) : null}
             <Link
               href="/#envia-tu-propuesta"
               className="text-brand-dark focus-ring inline-flex font-bold underline underline-offset-4"

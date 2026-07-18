@@ -2,10 +2,11 @@ import "server-only";
 
 import { unstable_noStore as noStore } from "next/cache";
 import { redirect } from "next/navigation";
+import { cache } from "react";
 
 import { createClient } from "@/lib/supabase/server";
 
-export async function getAdminSession() {
+export const getAdminSession = cache(async function getAdminSession() {
   noStore();
   const supabase = await createClient();
   const { data: claimsData, error: claimsError } =
@@ -24,7 +25,7 @@ export async function getAdminSession() {
     .maybeSingle();
 
   return profile ? { supabase, userId } : null;
-}
+});
 
 export async function requireAdmin() {
   const session = await getAdminSession();

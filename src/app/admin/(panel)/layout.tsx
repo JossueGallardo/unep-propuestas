@@ -34,7 +34,7 @@ export default async function AdminPanelLayout({
             </span>
           </Link>
           <form action={logoutAction}>
-            <Button type="submit" variant="outline">
+            <Button type="submit" variant="outline" aria-label="Cerrar sesión">
               <LogOut aria-hidden="true" />
               <span className="hidden sm:inline">Cerrar sesión</span>
             </Button>

@@ -15,6 +15,7 @@ import {
 import { formatAdminDate } from "@/lib/admin/format";
 import {
   ADMIN_PAGE_SIZE,
+  applyProposalFilters,
   filtersToSearchParams,
   parseAdminFilters,
   type SearchParams,
@@ -52,31 +53,23 @@ export default async function AdminDashboard({
   const filters = parseAdminFilters(await searchParams);
   const { supabase } = await requireAdmin();
 
-  let query = supabase.from("proposals").select("*", { count: "exact" });
-  if (filters.search) {
-    query = query.textSearch("search_document", filters.search, {
-      type: "websearch",
-      config: "spanish",
-    });
-  }
-  if (filters.category) query = query.eq("category", filters.category);
-  if (filters.status) query = query.eq("status", filters.status);
-  if (filters.anonymous)
-    query = query.eq("is_anonymous", filters.anonymous === "yes");
-  if (filters.from)
-    query = query.gte("created_at", `${filters.from}T00:00:00-05:00`);
-  if (filters.to)
-    query = query.lte("created_at", `${filters.to}T23:59:59.999-05:00`);
+  let query = supabase
+    .from("proposals")
+    .select(
+      "id, reference_code, is_anonymous, submitter_name, category, status, title, created_at",
+      { count: "exact" },
+    );
+  query = applyProposalFilters(query, filters);
 
   const offset = (filters.page - 1) * ADMIN_PAGE_SIZE;
   const [{ data, count, error }, countsResult] = await Promise.all([
-    query
-      .order("created_at", { ascending: filters.sort === "oldest" })
-      .range(offset, offset + ADMIN_PAGE_SIZE - 1),
+    query.range(offset, offset + ADMIN_PAGE_SIZE - 1),
     supabase.rpc("get_proposal_counts"),
   ]);
 
-  if (error) throw new Error("No se pudieron cargar las propuestas.");
+  if (error || countsResult.error) {
+    throw new Error("No se pudieron cargar las propuestas.");
+  }
 
   const rows = data ?? [];
   const total = count ?? 0;

@@ -39,9 +39,16 @@ describe("filtros administrativos", () => {
         status: "hack",
         category: "hack",
         page: "-4",
-        from: "14/07/2026",
+        from: "2026-02-31",
+        to: "14/07/2026",
       }),
-    ).toMatchObject({ status: "", category: "", page: 1, from: "" });
+    ).toMatchObject({
+      status: "",
+      category: "",
+      page: 1,
+      from: "",
+      to: "",
+    });
   });
 
   it("conserva filtros al paginar", () => {

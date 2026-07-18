@@ -2,6 +2,7 @@ import { NextResponse, type NextRequest } from "next/server";
 
 import { getRequiredEnv } from "@/lib/env";
 import { verifyFormToken } from "@/lib/security/form-token";
+import { readJsonBody } from "@/lib/security/json-body";
 import {
   getClientIp,
   hashClientIdentifier,
@@ -42,17 +43,14 @@ export async function POST(request: NextRequest) {
   ) {
     return errorResponse("El formato de la solicitud no es válido.", 415);
   }
-  const contentLength = Number(request.headers.get("content-length") ?? 0);
-  if (Number.isFinite(contentLength) && contentLength > MAX_REQUEST_BYTES) {
+  const bodyResult = await readJsonBody(request, MAX_REQUEST_BYTES);
+  if (!bodyResult.ok && bodyResult.reason === "too_large") {
     return errorResponse("La solicitud es demasiado grande.", 413);
   }
-
-  let body: unknown;
-  try {
-    body = await request.json();
-  } catch {
+  if (!bodyResult.ok) {
     return errorResponse("El formulario no contiene datos válidos.", 400);
   }
+  const body = bodyResult.value;
 
   const parsed = proposalFormSchema.safeParse(body);
   if (!parsed.success) {
@@ -75,10 +73,13 @@ export async function POST(request: NextRequest) {
     );
   }
 
-  const clientIp = getClientIp(request.headers);
+  const rateLimitKey = hashClientIdentifier(
+    getClientIp(request.headers),
+    hmacSecret,
+  );
   const turnstileValid = await verifyTurnstile(
     parsed.data.turnstileToken,
-    clientIp,
+    request.nextUrl.hostname,
   );
   if (!turnstileValid) {
     return errorResponse(
@@ -88,7 +89,6 @@ export async function POST(request: NextRequest) {
   }
 
   const normalized = normalizeProposalInput(parsed.data);
-  const rateLimitKey = hashClientIdentifier(clientIp, hmacSecret);
   const supabase = createPublicServerClient();
   const { data, error } = await supabase.rpc("submit_proposal", {
     p_rpc_secret: getRequiredEnv("PROPOSAL_RPC_SECRET"),

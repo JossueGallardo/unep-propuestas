@@ -1,8 +1,12 @@
 import type { NextRequest } from "next/server";
 
 import { proposalsToCsv } from "@/lib/admin/csv";
-import { MAX_CSV_ROWS, parseAdminFilters } from "@/lib/admin/filters";
 import { requireAdmin } from "@/lib/admin/auth";
+import {
+  applyProposalFilters,
+  MAX_CSV_ROWS,
+  parseAdminFilters,
+} from "@/lib/admin/filters";
 
 export const dynamic = "force-dynamic";
 export const revalidate = 0;
@@ -12,25 +16,12 @@ export async function GET(request: NextRequest) {
     Object.fromEntries(request.nextUrl.searchParams),
   );
   const { supabase } = await requireAdmin();
-  let query = supabase.from("proposals").select("*");
+  const query = applyProposalFilters(
+    supabase.from("proposals").select("*"),
+    filters,
+  );
 
-  if (filters.search)
-    query = query.textSearch("search_document", filters.search, {
-      type: "websearch",
-      config: "spanish",
-    });
-  if (filters.category) query = query.eq("category", filters.category);
-  if (filters.status) query = query.eq("status", filters.status);
-  if (filters.anonymous)
-    query = query.eq("is_anonymous", filters.anonymous === "yes");
-  if (filters.from)
-    query = query.gte("created_at", `${filters.from}T00:00:00-05:00`);
-  if (filters.to)
-    query = query.lte("created_at", `${filters.to}T23:59:59.999-05:00`);
-
-  const { data, error } = await query
-    .order("created_at", { ascending: filters.sort === "oldest" })
-    .range(0, MAX_CSV_ROWS);
+  const { data, error } = await query.range(0, MAX_CSV_ROWS);
   if (error)
     return new Response("No se pudo generar la exportación.", { status: 500 });
   if ((data?.length ?? 0) > MAX_CSV_ROWS)

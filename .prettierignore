@@ -3,6 +3,7 @@ node_modules
 coverage
 playwright-report
 test-results
+.playwright-mcp
 package-lock.json
 public/brand/*
 src/app/icon.png

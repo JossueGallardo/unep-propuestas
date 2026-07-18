@@ -1,7 +1,25 @@
 import AxeBuilder from "@axe-core/playwright";
-import { expect, test } from "@playwright/test";
+import { expect, test, type Page } from "@playwright/test";
+
+import { grantVercelPreviewAccess } from "./vercel-preview";
+
+const expectedSiteUrl =
+  process.env.E2E_EXPECTED_SITE_URL ??
+  process.env.E2E_BASE_URL ??
+  "http://127.0.0.1:3000";
+
+test.beforeEach(async ({ page }) => {
+  await grantVercelPreviewAccess(page);
+});
+
+async function mockFormToken(page: Page) {
+  await page.route("**/api/proposals/token", (route) =>
+    route.fulfill({ json: { token: "token-firmado-de-pruebas-suficiente" } }),
+  );
+}
 
 test("portada accesible, navegable y sin desbordamiento", async ({ page }) => {
+  await mockFormToken(page);
   await page.goto("/");
   await expect(
     page.getByRole("heading", { name: "UNEP", exact: true }),
@@ -22,6 +40,16 @@ test("portada accesible, navegable y sin desbordamiento", async ({ page }) => {
       name: "Instagram de UNEP (abre en una pestaña nueva)",
     }),
   ).toHaveAttribute("href", "https://www.instagram.com/lista_unep/");
+  const footer = page.getByRole("contentinfo");
+  await expect(
+    footer.getByRole("heading", {
+      name: "El cambio comienza escuchando.",
+    }),
+  ).toBeVisible();
+  await expect(
+    footer.getByRole("link", { name: "Acceso administrativo" }),
+  ).toHaveAttribute("href", "/admin/login");
+  await expect(footer.getByText("@lista_unep")).toBeVisible();
 
   const consentLayout = await page
     .locator('label[for="privacyAccepted"]')
@@ -97,7 +125,14 @@ test("portada accesible, navegable y sin desbordamiento", async ({ page }) => {
   );
 });
 
-test("navegación por teclado conserva foco visible", async ({ page }) => {
+test("navegación por teclado conserva foco visible", async ({
+  page,
+  browserName,
+}) => {
+  test.skip(
+    browserName === "webkit",
+    "WebKit emula el tabulado predeterminado de Safari, que omite enlaces.",
+  );
   await page.goto("/");
   await page.keyboard.press("Tab");
   await expect(
@@ -105,7 +140,39 @@ test("navegación por teclado conserva foco visible", async ({ page }) => {
   ).toBeFocused();
 });
 
+test("privacidad y acceso administrativo conservan metadata y accesibilidad", async ({
+  page,
+}) => {
+  test.setTimeout(60_000);
+
+  for (const path of ["/privacidad", "/admin/login"]) {
+    await page.goto(path);
+    const violations = await new AxeBuilder({ page }).analyze();
+    expect(violations.violations).toEqual([]);
+    const hasOverflow = await page.evaluate(
+      () =>
+        document.documentElement.scrollWidth >
+        document.documentElement.clientWidth,
+    );
+    expect(hasOverflow).toBe(false);
+  }
+
+  await page.goto("/privacidad");
+  await expect(page.locator('meta[property="og:title"]')).toHaveAttribute(
+    "content",
+    "Aviso de privacidad | UNEP",
+  );
+  await expect(page.locator('meta[property="og:url"]')).toHaveAttribute(
+    "content",
+    `${expectedSiteUrl}/privacidad`,
+  );
+
+  await page.goto("/admin/login");
+  await expect(page.locator('meta[property^="og:"]')).toHaveCount(0);
+});
+
 test("valida campos y muestra categoría personalizada", async ({ page }) => {
+  await mockFormToken(page);
   await page.goto("/#envia-tu-propuesta");
   await page.getByRole("button", { name: "Enviar propuesta" }).click();
   await expect(
@@ -138,7 +205,8 @@ test("envía propuestas anónimas y con nombre mostrando solo la referencia", as
   await page
     .getByLabel("Descripción detallada")
     .fill("Propongo ampliar el horario y añadir nuevos espacios de lectura.");
-  await page.getByLabel(/He leído/).check();
+  await page.getByLabel(/He leído/).click();
+  await expect(page.getByLabel(/He leído/)).toBeChecked();
   await page.getByRole("button", { name: "Enviar propuesta" }).click();
   await expect(page.getByText("UNEP-ABCDEF123456")).toBeVisible();
   expect(capturedBody?.isAnonymous).toBe(true);
@@ -155,7 +223,8 @@ test("envía propuestas anónimas y con nombre mostrando solo la referencia", as
     .fill(
       "Propongo encuentros culturales mensuales para toda la comunidad educativa.",
     );
-  await page.getByLabel(/He leído/).check();
+  await page.getByLabel(/He leído/).click();
+  await expect(page.getByLabel(/He leído/)).toBeChecked();
   await page.getByRole("button", { name: "Enviar propuesta" }).click();
   await expect(page.getByText("UNEP-ABCDEF123456")).toBeVisible();
   expect(capturedBody?.isAnonymous).toBe(false);
@@ -169,5 +238,49 @@ test("respeta movimiento reducido", async ({ page }) => {
     .locator(".animate-enter")
     .first()
     .evaluate((element) => getComputedStyle(element).animationDuration);
-  expect(["0.01ms", "1e-05s"]).toContain(duration);
+  expect(["0s", "0.01ms", "1e-05s", "0.00001s"]).toContain(duration);
+});
+
+test("webkit smoke: portada responsive, accesible e interactiva", async ({
+  page,
+}) => {
+  const consoleErrors: string[] = [];
+  page.on("console", (message) => {
+    const text = message.text();
+    const isProtectedPreviewToolbar =
+      Boolean(process.env.E2E_VERCEL_SHARE_TOKEN) &&
+      text.includes("vercel.live/_next-live/feedback/feedback.js") &&
+      text.includes("Content Security Policy");
+
+    if (message.type() === "error" && !isProtectedPreviewToolbar) {
+      consoleErrors.push(text);
+    }
+  });
+  await mockFormToken(page);
+  await page.goto("/");
+
+  await expect(
+    page.getByRole("heading", { name: "UNEP", exact: true }),
+  ).toBeVisible();
+  await expect(
+    page.getByRole("button", { name: "Enviar propuesta" }),
+  ).toBeEnabled();
+
+  await page.getByRole("button", { name: "Abrir menú" }).click();
+  await expect(page.getByRole("button", { name: "Cerrar menú" })).toBeVisible();
+  await page.getByRole("button", { name: "Cerrar menú" }).click();
+
+  await page.getByLabel(/He leído/).click();
+  await expect(page.getByLabel(/He leído/)).toBeChecked();
+
+  const violations = await new AxeBuilder({ page }).analyze();
+  expect(violations.violations).toEqual([]);
+  expect(
+    await page.evaluate(
+      () =>
+        document.documentElement.scrollWidth >
+        document.documentElement.clientWidth,
+    ),
+  ).toBe(false);
+  expect(consoleErrors).toEqual([]);
 });

@@ -15,6 +15,7 @@ import { SiteHeader } from "@/components/public/site-header";
 import { Button } from "@/components/ui/button";
 import { siteConfig } from "@/config/site";
 import { proposalCategories } from "@/lib/constants";
+import { getTurnstileSiteKey } from "@/lib/security/turnstile";
 
 const steps = [
   {
@@ -223,7 +224,7 @@ export default function Home() {
               </p>
             </div>
             <div className="border bg-white p-4 sm:p-8 lg:p-10">
-              <ProposalForm />
+              <ProposalForm turnstileSiteKey={getTurnstileSiteKey()} />
             </div>
           </div>
         </section>

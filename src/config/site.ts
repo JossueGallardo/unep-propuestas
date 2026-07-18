@@ -12,6 +12,7 @@ export const siteConfig = {
   socialLinks: [
     {
       label: "Instagram",
+      handle: "@lista_unep",
       href: "https://www.instagram.com/lista_unep/",
     },
   ],

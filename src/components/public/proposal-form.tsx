@@ -27,6 +27,7 @@ import {
 import { Switch } from "@/components/ui/switch";
 import { Textarea } from "@/components/ui/textarea";
 import { communityRoles, proposalCategories } from "@/lib/constants";
+import { TURNSTILE_ACTION } from "@/lib/security/turnstile-constants";
 import {
   proposalFormSchema,
   type ProposalFormInput,
@@ -53,10 +54,24 @@ const defaultValues: ProposalFormInput = {
   turnstileToken: "",
 };
 
-function FieldError({ message }: { message?: string }) {
+function FieldError({ id, message }: { id: string; message?: string }) {
   return message ? (
-    <p className="text-destructive mt-1.5 text-sm">{message}</p>
+    <p id={id} className="text-destructive mt-1.5 text-sm" role="alert">
+      {message}
+    </p>
   ) : null;
+}
+
+function RequiredMark() {
+  return (
+    <>
+      <span className="text-brand-dark" aria-hidden="true">
+        {" "}
+        *
+      </span>
+      <span className="sr-only"> (obligatorio)</span>
+    </>
+  );
 }
 
 async function requestFormToken() {
@@ -66,11 +81,14 @@ async function requestFormToken() {
   return result.token;
 }
 
-export function ProposalForm() {
+export function ProposalForm({
+  turnstileSiteKey,
+}: {
+  turnstileSiteKey?: string;
+}) {
   const [referenceCode, setReferenceCode] = useState<string | null>(null);
   const [submitError, setSubmitError] = useState("");
   const [tokenLoading, setTokenLoading] = useState(true);
-  const turnstileSiteKey = process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY;
 
   const form = useForm<ProposalFormInput>({
     resolver: zodResolver(proposalFormSchema),
@@ -94,6 +112,11 @@ export function ProposalForm() {
       setTokenLoading(false);
     }
   }, [form]);
+
+  const handleTurnstileToken = useCallback(
+    (token: string) => form.setValue("turnstileToken", token),
+    [form],
+  );
 
   useEffect(() => {
     let active = true;
@@ -199,6 +222,11 @@ export function ProposalForm() {
       onSubmit={form.handleSubmit(onSubmit)}
       className="space-y-7 sm:space-y-8"
     >
+      <p className="text-muted-foreground text-sm">
+        Los campos marcados con <span aria-hidden="true">*</span> son
+        obligatorios.
+      </p>
+
       <div className="flex items-start justify-between gap-5 border-b pb-6">
         <div>
           <Label htmlFor="anonymous" className="text-base font-bold">
@@ -242,9 +270,17 @@ export function ProposalForm() {
             disabled={isAnonymous}
             placeholder={isAnonymous ? "Oculto por envío anónimo" : "Tu nombre"}
             aria-invalid={Boolean(form.formState.errors.submitterName)}
+            aria-errormessage={
+              form.formState.errors.submitterName
+                ? "submitterName-error"
+                : undefined
+            }
             {...form.register("submitterName")}
           />
-          <FieldError message={form.formState.errors.submitterName?.message} />
+          <FieldError
+            id="submitterName-error"
+            message={form.formState.errors.submitterName?.message}
+          />
         </div>
 
         <div className="space-y-2">
@@ -262,7 +298,16 @@ export function ProposalForm() {
                 value={field.value || undefined}
                 onValueChange={field.onChange}
               >
-                <SelectTrigger id="communityRole" className="w-full">
+                <SelectTrigger
+                  id="communityRole"
+                  className="w-full"
+                  aria-invalid={Boolean(form.formState.errors.communityRole)}
+                  aria-errormessage={
+                    form.formState.errors.communityRole
+                      ? "communityRole-error"
+                      : undefined
+                  }
+                >
                   <SelectValue placeholder="Selecciona una opción" />
                 </SelectTrigger>
                 <SelectContent>
@@ -274,6 +319,10 @@ export function ProposalForm() {
                 </SelectContent>
               </Select>
             )}
+          />
+          <FieldError
+            id="communityRole-error"
+            message={form.formState.errors.communityRole?.message}
           />
         </div>
 
@@ -287,14 +336,26 @@ export function ProposalForm() {
           <Input
             id="courseOrArea"
             placeholder="Ej.: Segundo de bachillerato, Biblioteca"
+            aria-invalid={Boolean(form.formState.errors.courseOrArea)}
+            aria-errormessage={
+              form.formState.errors.courseOrArea
+                ? "courseOrArea-error"
+                : undefined
+            }
             {...form.register("courseOrArea")}
           />
-          <FieldError message={form.formState.errors.courseOrArea?.message} />
+          <FieldError
+            id="courseOrArea-error"
+            message={form.formState.errors.courseOrArea?.message}
+          />
         </div>
       </div>
 
       <div className="space-y-2">
-        <Label htmlFor="category">Categoría</Label>
+        <Label htmlFor="category">
+          Categoría
+          <RequiredMark />
+        </Label>
         <Controller
           control={form.control}
           name="category"
@@ -304,6 +365,10 @@ export function ProposalForm() {
                 id="category"
                 className="w-full"
                 aria-invalid={Boolean(form.formState.errors.category)}
+                aria-required="true"
+                aria-errormessage={
+                  form.formState.errors.category ? "category-error" : undefined
+                }
               >
                 <SelectValue />
               </SelectTrigger>
@@ -317,46 +382,80 @@ export function ProposalForm() {
             </Select>
           )}
         />
-        <FieldError message={form.formState.errors.category?.message} />
+        <FieldError
+          id="category-error"
+          message={form.formState.errors.category?.message}
+        />
       </div>
 
       {category === "otra" ? (
         <div className="animate-enter space-y-2">
           <Label htmlFor="customCategory">
             ¿Qué categoría describe mejor tu propuesta?
+            <RequiredMark />
           </Label>
           <Input
             id="customCategory"
             maxLength={60}
+            required
+            aria-invalid={Boolean(form.formState.errors.customCategory)}
+            aria-errormessage={
+              form.formState.errors.customCategory
+                ? "customCategory-error"
+                : undefined
+            }
             {...form.register("customCategory")}
           />
-          <FieldError message={form.formState.errors.customCategory?.message} />
+          <FieldError
+            id="customCategory-error"
+            message={form.formState.errors.customCategory?.message}
+          />
         </div>
       ) : null}
 
       <div className="space-y-2">
-        <Label htmlFor="title">Título de la propuesta</Label>
+        <Label htmlFor="title">
+          Título de la propuesta
+          <RequiredMark />
+        </Label>
         <Input
           id="title"
           placeholder="Resume tu idea en una frase"
           maxLength={140}
+          required
           aria-invalid={Boolean(form.formState.errors.title)}
+          aria-errormessage={
+            form.formState.errors.title ? "title-error" : undefined
+          }
           {...form.register("title")}
         />
-        <FieldError message={form.formState.errors.title?.message} />
+        <FieldError
+          id="title-error"
+          message={form.formState.errors.title?.message}
+        />
       </div>
 
       <div className="space-y-2">
-        <Label htmlFor="description">Descripción detallada</Label>
+        <Label htmlFor="description">
+          Descripción detallada
+          <RequiredMark />
+        </Label>
         <Textarea
           id="description"
           rows={7}
           maxLength={4000}
+          required
           placeholder="Cuéntanos qué propones y qué situación ayudaría a mejorar."
           aria-invalid={Boolean(form.formState.errors.description)}
+          aria-errormessage={
+            form.formState.errors.description ? "description-error" : undefined
+          }
           {...form.register("description")}
         />
-        <FieldError message={form.formState.errors.description?.message} />
+        <FieldError
+          id="description-error"
+          message={form.formState.errors.description?.message}
+        />
       </div>
 
       <div className="space-y-2">
@@ -368,9 +467,18 @@ export function ProposalForm() {
           id="expectedBenefit"
           rows={4}
           maxLength={1200}
+          aria-invalid={Boolean(form.formState.errors.expectedBenefit)}
+          aria-errormessage={
+            form.formState.errors.expectedBenefit
+              ? "expectedBenefit-error"
+              : undefined
+          }
           {...form.register("expectedBenefit")}
         />
-        <FieldError message={form.formState.errors.expectedBenefit?.message} />
+        <FieldError
+          id="expectedBenefit-error"
+          message={form.formState.errors.expectedBenefit?.message}
+        />
       </div>
 
       <div className="honeypot-field" aria-hidden="true">
@@ -395,6 +503,12 @@ export function ProposalForm() {
                 checked={field.value}
                 onCheckedChange={(checked) => field.onChange(checked === true)}
                 aria-invalid={Boolean(form.formState.errors.privacyAccepted)}
+                aria-required="true"
+                aria-errormessage={
+                  form.formState.errors.privacyAccepted
+                    ? "privacyAccepted-error"
+                    : undefined
+                }
               />
               <Label
                 htmlFor="privacyAccepted"
@@ -408,9 +522,11 @@ export function ProposalForm() {
                   aviso de privacidad
                 </Link>{" "}
                 y acepto el uso responsable de este espacio.
+                <RequiredMark />
               </Label>
             </div>
             <FieldError
+              id="privacyAccepted-error"
               message={form.formState.errors.privacyAccepted?.message}
             />
           </div>
@@ -419,8 +535,9 @@ export function ProposalForm() {
 
       {turnstileSiteKey ? (
         <TurnstileWidget
+          action={TURNSTILE_ACTION}
           siteKey={turnstileSiteKey}
-          onToken={(token) => form.setValue("turnstileToken", token)}
+          onToken={handleTurnstileToken}
         />
       ) : null}
 

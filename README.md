@@ -45,6 +45,10 @@ npm run test:e2e
 npm run build
 ```
 
+Las pruebas de base requieren Docker y Supabase CLI: inicia el entorno con
+`supabase start` y ejecuta `supabase test db`. El CI valida estas pruebas SQL en
+un job independiente.
+
 Los E2E conectados usan `E2E_LIVE=true`. Las pruebas administrativas requieren temporalmente `E2E_ADMIN_EMAIL` y `E2E_ADMIN_PASSWORD`; no se guardan ni se comparten.
 
 ## Documentación

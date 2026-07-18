@@ -14,7 +14,7 @@ const contentSecurityPolicy = [
   "base-uri 'self'",
   "form-action 'self'",
   "object-src 'none'",
-  "upgrade-insecure-requests",
+  ...(isDevelopment ? [] : ["upgrade-insecure-requests"]),
 ].join("; ");
 
 const nextConfig: NextConfig = {

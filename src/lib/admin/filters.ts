@@ -15,7 +15,14 @@ function first(value: string | string[] | undefined) {
 }
 
 function validDate(value: string | undefined) {
-  return value && /^\d{4}-\d{2}-\d{2}$/.test(value) ? value : "";
+  if (!value || !/^\d{4}-\d{2}-\d{2}$/.test(value)) return "";
+  const [year, month, day] = value.split("-").map(Number);
+  const parsed = new Date(Date.UTC(year!, month! - 1, day!));
+  return parsed.getUTCFullYear() === year &&
+    parsed.getUTCMonth() === month! - 1 &&
+    parsed.getUTCDate() === day
+    ? value
+    : "";
 }
 
 export function parseAdminFilters(params: SearchParams) {
@@ -45,49 +52,40 @@ export function parseAdminFilters(params: SearchParams) {
 
 export type AdminFilters = ReturnType<typeof parseAdminFilters>;
 
-export function applyProposalFilters<
-  T extends {
-    textSearch: (...args: never[]) => T;
-    eq: (...args: never[]) => T;
-    gte: (...args: never[]) => T;
-    lte: (...args: never[]) => T;
-    order: (...args: never[]) => T;
-  },
->(query: T, filters: AdminFilters): T {
+type ProposalFilterQuery<T> = {
+  textSearch: (
+    column: string,
+    query: string,
+    options: { type: "websearch"; config: "spanish" },
+  ) => T;
+  eq: (column: string, value: string | boolean) => T;
+  gte: (column: string, value: string) => T;
+  lte: (column: string, value: string) => T;
+  order: (column: string, options: { ascending: boolean }) => T;
+};
+
+export function applyProposalFilters<T extends ProposalFilterQuery<T>>(
+  query: T,
+  filters: AdminFilters,
+): T {
   let next = query;
   if (filters.search) {
-    next = next.textSearch(
-      "search_document" as never,
-      filters.search as never,
-      {
-        type: "websearch",
-        config: "spanish",
-      } as never,
-    );
+    next = next.textSearch("search_document", filters.search, {
+      type: "websearch",
+      config: "spanish",
+    });
   }
-  if (filters.category)
-    next = next.eq("category" as never, filters.category as never);
-  if (filters.status)
-    next = next.eq("status" as never, filters.status as never);
+  if (filters.category) next = next.eq("category", filters.category);
+  if (filters.status) next = next.eq("status", filters.status);
   if (filters.anonymous)
-    next = next.eq(
-      "is_anonymous" as never,
-      (filters.anonymous === "yes") as never,
-    );
+    next = next.eq("is_anonymous", filters.anonymous === "yes");
   if (filters.from)
-    next = next.gte(
-      "created_at" as never,
-      `${filters.from}T00:00:00-05:00` as never,
-    );
+    next = next.gte("created_at", `${filters.from}T00:00:00-05:00`);
   if (filters.to)
-    next = next.lte(
-      "created_at" as never,
-      `${filters.to}T23:59:59.999-05:00` as never,
-    );
-  return next.order(
-    "created_at" as never,
-    { ascending: filters.sort === "oldest" } as never,
-  );
+    next = next.lte("created_at", `${filters.to}T23:59:59.999-05:00`);
+  return next.order("created_at", {
+    ascending: filters.sort === "oldest",
+  });
 }
 
 export function filtersToSearchParams(

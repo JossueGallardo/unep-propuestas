@@ -1,5 +1,9 @@
 begin;
 
+create extension if not exists pgtap with schema extensions;
+
+select extensions.plan(8);
+
 do $$
 begin
   if not (select relrowsecurity from pg_class where oid = 'public.proposals'::regclass) then
@@ -23,16 +27,24 @@ begin
 end;
 $$;
 
+select extensions.pass('RLS y privilegios base protegen las tablas y funciones');
+
 insert into private.rpc_secret_verifiers (environment, secret_hash)
 values ('preview', encode(extensions.digest('sql-test-secret', 'sha256'), 'hex'))
 on conflict (environment) do update
 set secret_hash = excluded.secret_hash, active = true;
+
+create temporary table test_proposal_references (
+  reference_code text primary key
+) on commit drop;
+grant select, insert on table test_proposal_references to anon, authenticated;
 
 set local role anon;
 
 do $$
 declare
   first_reference text;
+  next_reference text;
   idx integer;
 begin
   first_reference := public.submit_proposal(
@@ -43,13 +55,15 @@ begin
   if first_reference !~ '^UNEP-[A-F0-9]{12}$' then
     raise exception 'El RPC devolvió una respuesta distinta de la referencia mínima';
   end if;
+  insert into pg_temp.test_proposal_references values (first_reference);
 
   for idx in 1..2 loop
-    perform public.submit_proposal(
+    next_reference := public.submit_proposal(
       'sql-test-secret', repeat('a', 64), true, null, 'estudiante', null,
       'academico', null, 'Otra propuesta válida',
       'Esta descripción también contiene suficiente detalle para ser válida.', null
     );
+    insert into pg_temp.test_proposal_references values (next_reference);
   end loop;
 
   begin
@@ -66,6 +80,8 @@ end;
 $$;
 
 reset role;
+
+select extensions.pass('El RPC devuelve la referencia mínima y limita el cuarto envío');
 
 insert into auth.users (id, email)
 values
@@ -98,6 +114,8 @@ end;
 $$;
 reset role;
 
+select extensions.pass('Un usuario autenticado sin perfil admin no accede a propuestas');
+
 select set_config(
   'request.jwt.claims',
   '{"sub":"00000000-0000-4000-8000-000000000101","role":"authenticated"}',
@@ -109,19 +127,32 @@ declare
   visible_count integer;
   changed_count integer;
 begin
-  select count(*) into visible_count from public.proposals;
+  select count(*)
+  into visible_count
+  from public.proposals
+  join pg_temp.test_proposal_references using (reference_code);
   if visible_count <> 3 then
     raise exception 'El administrador no puede leer todas las proposals de prueba';
   end if;
   update public.proposals
   set status = 'revisada'
-  where id = (select id from public.proposals where status = 'nueva' limit 1);
+  where id = (
+    select proposals.id
+    from public.proposals
+    join pg_temp.test_proposal_references using (reference_code)
+    where status = 'nueva'
+    limit 1
+  );
   get diagnostics changed_count = row_count;
   if changed_count <> 1 then
     raise exception 'El administrador no pudo actualizar status';
   end if;
   begin
-    update public.proposals set title = 'Cambio no permitido';
+    update public.proposals
+    set title = 'Cambio no permitido'
+    where reference_code in (
+      select reference_code from pg_temp.test_proposal_references
+    );
     raise exception 'El administrador pudo actualizar contenido original';
   exception when insufficient_privilege then
     null;
@@ -130,14 +161,26 @@ end;
 $$;
 reset role;
 
+select extensions.pass('El administrador puede leer y cambiar únicamente el estado');
+
 do $$
 declare
   proposal_id uuid;
 begin
-  if exists (select 1 from public.proposals where is_anonymous and submitter_name is not null) then
+  if exists (
+    select 1
+    from public.proposals
+    join pg_temp.test_proposal_references using (reference_code)
+    where is_anonymous and submitter_name is not null
+  ) then
     raise exception 'El nombre de una propuesta anónima fue almacenado';
   end if;
-  select id into proposal_id from public.proposals where status = 'nueva' limit 1;
+  select proposals.id
+  into proposal_id
+  from public.proposals
+  join pg_temp.test_proposal_references using (reference_code)
+  where status = 'nueva'
+  limit 1;
   update public.proposals set status = 'revisada' where id = proposal_id;
   if not exists (select 1 from public.proposals where id = proposal_id and reviewed_at is not null) then
     raise exception 'La transición a revisada no estableció reviewed_at';
@@ -157,5 +200,12 @@ begin
   end;
 end;
 $$;
+
+select extensions.pass('El anonimato elimina el nombre antes de almacenar');
+select extensions.pass('La revisión establece reviewed_at');
+select extensions.pass('El contenido original permanece inmutable');
+select extensions.pass('El estado archivada es terminal');
+
+select * from extensions.finish();
 
 rollback;

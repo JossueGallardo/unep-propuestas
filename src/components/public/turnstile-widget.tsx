@@ -12,6 +12,7 @@ declare global {
           sitekey: string;
           callback: (token: string) => void;
           "expired-callback": () => void;
+          action: string;
           theme: "light";
         },
       ) => string;
@@ -21,9 +22,11 @@ declare global {
 }
 
 export function TurnstileWidget({
+  action,
   siteKey,
   onToken,
 }: {
+  action: string;
   siteKey: string;
   onToken: (token: string) => void;
 }) {
@@ -35,11 +38,12 @@ export function TurnstileWidget({
       return;
     widgetIdRef.current = window.turnstile.render(containerRef.current, {
       sitekey: siteKey,
+      action,
       callback: onToken,
       "expired-callback": () => onToken(""),
       theme: "light",
     });
-  }, [onToken, siteKey]);
+  }, [action, onToken, siteKey]);
 
   useEffect(() => {
     renderWidget();

@@ -40,6 +40,7 @@ export default defineConfig({
   projects: [
     {
       name: "desktop-1440",
+      grepInvert: /webkit smoke/,
       use: {
         ...devices["Desktop Chrome"],
         viewport: { width: 1440, height: 900 },
@@ -47,6 +48,7 @@ export default defineConfig({
     },
     {
       name: "laptop-1280",
+      grepInvert: /webkit smoke/,
       use: {
         ...devices["Desktop Chrome"],
         viewport: { width: 1280, height: 800 },
@@ -54,6 +56,7 @@ export default defineConfig({
     },
     {
       name: "mobile-390",
+      grepInvert: /webkit smoke/,
       use: {
         ...devices["iPhone 13"],
         browserName: "chromium",
@@ -62,7 +65,16 @@ export default defineConfig({
     },
     {
       name: "mobile-412",
+      grepInvert: /webkit smoke/,
       use: { ...devices["Galaxy S9+"], viewport: { width: 412, height: 915 } },
+    },
+    {
+      name: "mobile-webkit-390",
+      grep: /webkit smoke/,
+      use: {
+        ...devices["iPhone 13"],
+        viewport: { width: 390, height: 844 },
+      },
     },
   ],
 });

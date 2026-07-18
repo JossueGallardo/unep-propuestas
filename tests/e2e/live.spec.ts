@@ -1,10 +1,16 @@
 import { expect, test } from "@playwright/test";
 
+import { grantVercelPreviewAccess } from "./vercel-preview";
+
 test.describe("flujos conectados", () => {
   test.skip(
     process.env.E2E_LIVE !== "true",
     "Requiere preview conectado a Supabase",
   );
+
+  test.beforeEach(async ({ page }) => {
+    await grantVercelPreviewAccess(page);
+  });
 
   test("rechaza lectura pública de propuestas", async ({ request }) => {
     const url = process.env.NEXT_PUBLIC_SUPABASE_URL!;

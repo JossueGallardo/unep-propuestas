@@ -1,6 +1,7 @@
 import type { Metadata, Viewport } from "next";
 import { Archivo, Source_Sans_3 } from "next/font/google";
 
+import { StructuredData } from "@/components/public/structured-data";
 import { getSiteUrl, siteConfig } from "@/config/site";
 
 import "./globals.css";
@@ -54,6 +55,7 @@ export default function RootLayout({
   return (
     <html lang="es" className={`${archivo.variable} ${sourceSans.variable}`}>
       <body>
+        <StructuredData />
         <a
           href="#contenido"
           className="focus:bg-ivory fixed top-3 left-3 z-[100] -translate-y-24 border bg-white px-4 py-2 font-semibold transition-transform focus:translate-y-0"
